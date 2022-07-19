@@ -9,6 +9,7 @@
 #define uint unsigned int
 
 #define ERROR_INVALID_LENGTH -1
+#define ERROR_WRONG_USAGE -2
 
 #define INDEX_DAC 3
 
@@ -40,7 +41,8 @@ uint compute_sliding_acc_product(uint *numbers, uint numbers_length, uint *seque
         uint prod = numbers[index_numbers] * sequence[index_sequence];
         acc_sum += prod;
 
-        debug("(%d, %d) %d x %d = %d \t sum = %d \n", index_numbers, index_sequence, numbers[index_numbers], sequence[index_sequence], prod, acc_sum);
+        //debug("(%d, %d) ", index_numbers, index_sequence);
+        debug("%d x %d = %d \t sum = %d \n", numbers[index_numbers], sequence[index_sequence], prod, acc_sum);
 
         index_numbers--;
         index_sequence = barrel_roll_inc(index_sequence, sequence_length);
@@ -104,18 +106,35 @@ char* create_copy_discarding_dac_digit(char *boleto, uint boleto_length) {
     return result;
 }
 
-int main () {
-    char *boletoFull = "846700000017020400820898992824091613518251262995";
+void print_usage(char *execName) {
+    printf("Incorrect parameters! \n");
+    printf("Usage : %s <BOLETO> \n", execName);
+}
+
+int main (int argc, char *argv[]) {
+
+    if (argc < 2){
+        print_usage(argv[0]);
+        return ERROR_WRONG_USAGE;
+    }
+
+    char *boletoFull = argv[1];
     printf("Checking following code: %s (%lu digits) \n", boletoFull, strlen(boletoFull));
     uint expected_dac = get_expected_dac(boletoFull, strlen(boletoFull));
 
     char *boletoWithoutDAC = create_copy_discarding_dac_digit(boletoFull, strlen(boletoFull));
-    printf("Without DAC: %s (%lu digits) \n", boletoWithoutDAC, strlen(boletoWithoutDAC));
+    debug("Without DAC: %s (%lu digits) \n", boletoWithoutDAC, strlen(boletoWithoutDAC));
     uint computed_dac = compute_dac(boletoWithoutDAC, strlen(boletoWithoutDAC));
     free(boletoWithoutDAC);
 
-    printf("Expected DAC: %u \n", expected_dac);
-    printf("Computed DAC: %u \n", computed_dac);
+    debug("Expected DAC: %u \n", expected_dac);
+    debug("Computed DAC: %u \n", computed_dac);
+
+    if (expected_dac == computed_dac) {
+        printf("DAC is valid! (%d) \n", expected_dac);
+    } else {
+        printf("DAC is invalid. Expected %d but got %d instead \n", expected_dac, computed_dac);
+    }
 
     return 0;
 }
