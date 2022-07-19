@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 #define ARRAY_SIZE(X) (sizeof(X)/sizeof(X[0]))
 #define uint unsigned int
@@ -66,7 +66,18 @@ uint compute_dac11(char *boleto, uint len) {
     uint mod11 = acc_sum % 11;
 
     debug("%d mod 11 = %d \n", acc_sum, mod11);
-    uint result = (mod11 <= 1) ? 0 : (mod11 == 10) ? 1 : mod11;
+    uint result = 0;
+    
+    if (mod11 <= 1) {
+        debug("%d <= 1, so result = 0 \n", mod11);
+        result = 0;
+    } else if (mod11 == 10) {
+        debug("%d == 10, so result = 1 \n", mod11);
+        result = 1;
+    } else {
+        debug("result = %d \n", mod11);
+        result = mod11;
+    }
 
     free(buffer);
 
@@ -74,13 +85,24 @@ uint compute_dac11(char *boleto, uint len) {
 }
 
 uint compute_dac10(char *boleto, uint len) {
-    static uint dac10_sequence[] = {1, 2};
+    static uint dac10_sequence[] = {2, 1};
     uint *buffer = calloc(len, sizeof(uint));
     char_array_to_uint_array(boleto, len, buffer);
 
     uint acc_sum = compute_sliding_acc_product(buffer, len, dac10_sequence, ARRAY_SIZE(dac10_sequence));
-    uint result = acc_sum % 10;
+    uint mod10 = acc_sum % 10;
+    debug("%d mod 10 = %d \n", acc_sum, mod10);
+
     free(buffer);
+
+    uint result = 0;
+    if (mod10 == 0) {
+       result = 0; 
+       debug("%d == 0, so result = %d \n", mod10, result);
+    } else {
+        result = 10 - mod10;
+        debug("%d != 0, so result = (10 - %d) => %d \n", mod10, mod10, result);
+    }
 
     return result;
 }
@@ -93,8 +115,13 @@ uint get_expected_dac(char *boleto, uint len) {
 
 uint compute_dac(char *boleto, uint len) {
     switch (len + 1) {
-        case 48: return compute_dac11(boleto, len);
-        default: return compute_dac10(boleto, len);
+        case 48: 
+            printf("Using DAC11 algorithm... \n");
+            return compute_dac11(boleto, len);
+
+        default: 
+            printf("Using DAC10 algorithm... \n");
+            return compute_dac10(boleto, len);
     }
 }
 
